@@ -18,7 +18,14 @@ def _run_report_only(cmd: list[str]) -> int:
     result = subprocess.run(cmd)
     return result.returncode
 
-
+@task(name="clone-or-pull-repo")
+def fetch_repo() -> None:
+    logger = get_run_logger()
+    if not Path(".git").exists():
+        _run(["git", "clone", "https://github.com/ahmed200346/DevOps-Test", "."])
+    else:
+        _run(["git", "pull"])
+    logger.info("Repository up to date.")
 @task(name="install-dependencies")
 def install_dependencies() -> None:
     logger = get_run_logger()
