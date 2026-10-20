@@ -122,6 +122,34 @@ def unit_tests() -> None:
     _run([str(PYTHON_BIN), "-m", "pytest", str(BASE_DIR / "test_main.py")])
     logger.info("Unit tests passed.")
 
+@task(name="run-api")
+def run_api() -> None:
+    logger = get_run_logger()
+    subprocess.Popen([
+        str(PYTHON_BIN), "-m", "uvicorn",
+        "app:app", "--host", "0.0.0.0", "--port", "8000"
+    ])
+    logger.info("API FastAPI lancée en arrière-plan.")
+
+@task(name="run-streamlit")
+def run_streamlit() -> None:
+    logger = get_run_logger()
+    subprocess.Popen([
+        str(PYTHON_BIN), "-m", "streamlit", "run",
+        str(BASE_DIR / "streamlit_app.py"),
+        "--server.port", "8501",
+        "--server.address", "0.0.0.0"
+    ])
+    logger.info("Frontend Streamlit lancé.")
+
+@flow(name="full-app", log_prints=True)
+def flow_full_app() -> None:
+    run_api()
+    run_streamlit()
+
+@flow(name="frontend", log_prints=True)
+def flow_frontend() -> None:
+    run_streamlit()
 
 @flow(name="train", log_prints=True)
 def flow_train() -> None:
@@ -152,13 +180,18 @@ def flow_all() -> None:
     train_model()
     save_model()
     evaluate_model()
-
+@flow(name="api", log_prints=True)
+def flow_api() -> None:
+    run_api()
 
 FLOWS = {
     "all": flow_all,
     "train": flow_train,
     "evaluate": flow_evaluate,
     "code": flow_code,
+    "api": flow_api,
+    "frontend": flow_frontend,
+    "full-app": flow_full_app,
 }
 
 if __name__ == "__main__":
